@@ -926,6 +926,7 @@
                 return saved || 'dark';
             });
             const searchInputRef = useRef(null);
+            const abortControllerRef = useRef(null);
 
             // Apply theme to document
             useEffect(() => {
@@ -950,10 +951,20 @@
             }, []);
 
             const fetchArrivals = useCallback(async (stationCode, silent = false) => {
+                // Cancel any pending request to prevent stale data overwriting
+                if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                }
+
+                // Create new abort controller for this request
+                abortControllerRef.current = new AbortController();
+
                 if (!silent) setLoading(true);
                 setError(null);
                 try {
-                    const response = await fetch('/api/arrivals/' + stationCode);
+                    const response = await fetch('/api/arrivals/' + stationCode, {
+                        signal: abortControllerRef.current.signal
+                    });
                     const result = await response.json();
                     if (result.success) {
                         setArrivalData(result.data);
@@ -962,6 +973,10 @@
                         setError(result.error || 'Failed to fetch arrival data');
                     }
                 } catch (err) {
+                    // Ignore abort errors - they're intentional
+                    if (err.name === 'AbortError') {
+                        return;
+                    }
                     setError('Network error. Please try again.');
                 } finally {
                     if (!silent) setLoading(false);
