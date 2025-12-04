@@ -1,0 +1,27 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Redirect API calls to Netlify Functions
+[[redirects]]
+  from = "/api/arrivals/:code"
+  to = "/.netlify/functions/arrivals?code=:code"
+  status = 200
+
+[[redirects]]
+  from = "/api/arrivals"
+  to = "/.netlify/functions/arrivals"
+  status = 200
+
+[[redirects]]
+  from = "/api/stations"
+  to = "/.netlify/functions/stations"
+  status = 200
+
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/health"
+  status = 200

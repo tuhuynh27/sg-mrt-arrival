@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singapore MRT Arrivals</title>
+    <style>
+        :root {
+            /* Dark theme (default) */
+            --surface-0: #0a0a0c;
+            --surface-1: #111114;
+            --surface-2: #18181c;
+            --surface-3: #222228;
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+            --text-primary: #fafafa;
+            --text-secondary: rgba(255, 255, 255, 0.55);
+            --text-tertiary: rgba(255, 255, 255, 0.35);
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --success: #22c55e;
+            --radius: 8px;
+            --radius-lg: 12px;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        [data-theme="light"] {
+            --surface-0: #f8f7f4;
+            --surface-1: #ffffff;
+            --surface-2: #f3f2ef;
+            --surface-3: #e8e6e1;
+            --border: rgba(0, 0, 0, 0.08);
+            --border-hover: rgba(0, 0, 0, 0.15);
+            --text-primary: #1a1a1a;
+            --text-secondary: rgba(0, 0, 0, 0.6);
+            --text-tertiary: rgba(0, 0, 0, 0.4);
+            --accent: #2563eb;
+            --accent-glow: rgba(37, 99, 235, 0.12);
+            --success: #16a34a;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--surface-0);
+            min-height: 100vh;
+            min-height: 100dvh;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0 12px;
+        }
+
+        .logo-text {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .refresh-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .refresh-btn:hover {
+            background: var(--surface-3);
+            color: var(--text-primary);
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn.spinning svg {
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-toggle:hover {
+            background: var(--surface-3);
+            color: var(--text-primary);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .theme-toggle svg {
+            position: absolute;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-toggle .sun-icon {
+            opacity: 0;
+            transform: rotate(-90deg) scale(0.5);
+        }
+
+        .theme-toggle .moon-icon {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+        }
+
+        [data-theme="light"] .theme-toggle .sun-icon {
+            opacity: 1;
+            transform: rotate(0deg) scale(1);
+        }
+
+        [data-theme="light"] .theme-toggle .moon-icon {
+            opacity: 0;
+            transform: rotate(90deg) scale(0.5);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Station Search Section */
+        .station-search-section {
+            margin-bottom: 16px;
+        }
+
+        /* Quick Access Stations */
+        .quick-access {
+            margin-bottom: 10px;
+        }
+
+        .quick-access-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .quick-access-chips {
+            display: flex;
+            gap: 8px;
+        }
+
+        .quick-chip {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quick-chip::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            transition: width 0.2s ease;
+        }
+
+        .quick-chip.ewl::before {
+            background: linear-gradient(180deg, #22c55e, #16a34a);
+        }
+
+        .quick-chip:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-2);
+            transform: translateY(-1px);
+        }
+
+        .quick-chip:hover::before {
+            width: 4px;
+        }
+
+        .quick-chip:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .quick-chip.selected {
+            border-color: rgba(34, 197, 94, 0.4);
+            background: rgba(34, 197, 94, 0.08);
+        }
+
+        .quick-chip.selected::before {
+            width: 4px;
+        }
+
+        .quick-chip-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            flex-shrink: 0;
+        }
+
+        .quick-chip.ewl .quick-chip-icon {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+            color: #4ade80;
+        }
+
+        .quick-chip-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .quick-chip-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: -0.2px;
+        }
+
+        .quick-chip-code {
+            font-size: 9px;
+            color: var(--text-tertiary);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .quick-chip.selected .quick-chip-name {
+            color: #4ade80;
+        }
+
+        [data-theme="light"] .quick-chip.ewl::before {
+            background: linear-gradient(180deg, #16a34a, #15803d);
+        }
+
+        [data-theme="light"] .quick-chip.ewl .quick-chip-icon {
+            background: linear-gradient(135deg, rgba(22, 163, 74, 0.15), rgba(22, 163, 74, 0.08));
+            color: #16a34a;
+        }
+
+        [data-theme="light"] .quick-chip.selected {
+            border-color: rgba(22, 163, 74, 0.4);
+            background: rgba(22, 163, 74, 0.06);
+        }
+
+        [data-theme="light"] .quick-chip.selected .quick-chip-name {
+            color: #16a34a;
+        }
+
+        /* Divider */
+        .search-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .search-divider-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .search-divider-text {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+        }
+
+        /* Custom Dropdown */
+        .custom-dropdown {
+            position: relative;
+        }
+
+        .dropdown-trigger {
+            width: 100%;
+            padding: 12px 40px 12px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface-1);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .dropdown-trigger::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23666'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
+            background-size: contain;
+            opacity: 0.5;
+        }
+
+        .dropdown-trigger {
+            padding-left: 36px;
+        }
+
+        .dropdown-trigger:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-2);
+        }
+
+        .dropdown-trigger.open {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .dropdown-trigger-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-trigger-code {
+            color: var(--text-tertiary);
+            font-size: 10px;
+            font-weight: 500;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: var(--surface-3);
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .dropdown-arrow {
+            color: var(--text-tertiary);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .dropdown-trigger.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface-1);
+            border: 1px solid var(--accent);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+        }
+
+        .dropdown-menu.open {
+            max-height: 320px;
+            opacity: 1;
+        }
+
+        .dropdown-search {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--surface-1);
+            z-index: 1;
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface-0);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-search input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .dropdown-search input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .dropdown-list {
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 6px;
+        }
+
+        .dropdown-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .dropdown-list::-webkit-scrollbar-thumb {
+            background: var(--surface-3);
+            border-radius: 3px;
+        }
+
+        .dropdown-item {
+            padding: 10px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dropdown-item:hover {
+            background: var(--surface-2);
+        }
+
+        .dropdown-item.selected {
+            background: var(--accent-glow);
+            color: var(--accent);
+        }
+
+        .dropdown-item-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-item-code {
+            color: var(--text-tertiary);
+            font-size: 10px;
+            font-weight: 500;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: var(--surface-3);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .dropdown-item.selected .dropdown-item-code {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+        }
+
+        .dropdown-empty {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+
+        .dropdown-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99;
+        }
+
+        /* Quick chip animations */
+        @keyframes chipPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+            50% { box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1); }
+        }
+
+        .quick-chip.selected {
+            animation: chipPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes chipPulseLight {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+            50% { box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.08); }
+        }
+
+        [data-theme="light"] .quick-chip.selected {
+            animation: chipPulseLight 2s ease-in-out infinite;
+        }
+
+        /* Station Info Bar */
+        .station-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            margin-bottom: 8px;
+        }
+
+        .station-name {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+
+        /* Direction Cards */
+        .directions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .direction-card {
+            background: var(--surface-1);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            transition: all 0.15s ease;
+        }
+
+        .direction-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-2);
+        }
+
+        [data-theme="light"] .direction-card {
+            box-shadow: var(--shadow-sm);
+        }
+
+        [data-theme="light"] .direction-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .direction-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .direction-arrow {
+            width: 22px;
+            height: 22px;
+            background: var(--surface-3);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .line-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .line-badge.ewl {
+            background: rgba(22, 163, 74, 0.15);
+            color: #16a34a;
+        }
+
+        .line-badge.nsl {
+            background: rgba(220, 38, 38, 0.15);
+            color: #dc2626;
+        }
+
+        .line-badge.ccl {
+            background: rgba(234, 138, 0, 0.15);
+            color: #d97706;
+        }
+
+        .line-badge.nel {
+            background: rgba(147, 51, 234, 0.15);
+            color: #9333ea;
+        }
+
+        .line-badge.dtl {
+            background: rgba(37, 99, 235, 0.15);
+            color: #2563eb;
+        }
+
+        .line-badge.tel {
+            background: rgba(180, 83, 9, 0.15);
+            color: #b45309;
+        }
+
+        .line-badge.default {
+            background: var(--surface-3);
+            color: var(--text-secondary);
+        }
+
+        /* Dark theme line badge adjustments */
+        :root .line-badge.ewl {
+            color: #4ade80;
+        }
+
+        :root .line-badge.nsl {
+            color: #f87171;
+        }
+
+        :root .line-badge.ccl {
+            color: #fbbf24;
+        }
+
+        :root .line-badge.nel {
+            color: #c084fc;
+        }
+
+        :root .line-badge.dtl {
+            color: #60a5fa;
+        }
+
+        :root .line-badge.tel {
+            color: #d4a574;
+        }
+
+        [data-theme="light"] .line-badge.ewl {
+            color: #16a34a;
+        }
+
+        [data-theme="light"] .line-badge.nsl {
+            color: #dc2626;
+        }
+
+        [data-theme="light"] .line-badge.ccl {
+            color: #d97706;
+        }
+
+        [data-theme="light"] .line-badge.nel {
+            color: #9333ea;
+        }
+
+        [data-theme="light"] .line-badge.dtl {
+            color: #2563eb;
+        }
+
+        [data-theme="light"] .line-badge.tel {
+            color: #b45309;
+        }
+
+        .direction-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .direction-label {
+            margin-bottom: 2px;
+        }
+
+        .direction-dest {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Train Times Grid */
+        .times-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .time-cell {
+            background: var(--surface-0);
+            border-radius: var(--radius);
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        .time-cell.next {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(59, 130, 246, 0.06));
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .time-label {
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .time-value {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            line-height: 1;
+        }
+
+        .time-cell.next .time-value {
+            color: var(--accent);
+        }
+
+        .time-cell.after .time-value {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+
+        [data-theme="light"] .time-cell.next {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(37, 99, 235, 0.04));
+            border: 1px solid rgba(37, 99, 235, 0.15);
+        }
+
+        .time-dest {
+            font-size: 9px;
+            color: var(--text-tertiary);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* States */
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 16px;
+            color: var(--text-tertiary);
+        }
+
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--surface-3);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-bottom: 10px;
+        }
+
+        .loading-state p {
+            font-size: 12px;
+        }
+
+        .error-state {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: var(--radius);
+            padding: 14px;
+            text-align: center;
+            color: #f87171;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+
+        /* Footer */
+        .updated-at {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .updated-at span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .pulse-dot {
+            width: 5px;
+            height: 5px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Tablet+ */
+        @media (min-width: 640px) {
+            .container {
+                padding: 20px;
+                max-width: 440px;
+            }
+
+            .time-value {
+                font-size: 26px;
+            }
+
+            .time-cell.after .time-value {
+                font-size: 20px;
+            }
+        }
+
+        /* Animations */
+        .direction-card {
+            animation: fadeUp 0.3s ease backwards;
+        }
+
+        .direction-card:nth-child(1) { animation-delay: 0.05s; }
+        .direction-card:nth-child(2) { animation-delay: 0.1s; }
+        .direction-card:nth-child(3) { animation-delay: 0.15s; }
+        .direction-card:nth-child(4) { animation-delay: 0.2s; }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script src="https://unpkg.com/htm@3.1.1/dist/htm.js"></script>
+    <script src="https://unpkg.com/preact@10.7.3/dist/preact.min.js"></script>
+    <script src="https://unpkg.com/preact@10.7.3/hooks/dist/hooks.umd.js"></script>
+
+    <script>
+        const { h, render } = preact;
+        const { useState, useEffect, useCallback, useRef } = preactHooks;
+        const html = htm.bind(h);
+
+        function App() {
+            const [stations, setStations] = useState([]);
+            const [selectedStation, setSelectedStation] = useState('TIB');
+            const [arrivalData, setArrivalData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [lastUpdated, setLastUpdated] = useState(null);
+            const [dropdownOpen, setDropdownOpen] = useState(false);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [theme, setTheme] = useState(() => {
+                const saved = localStorage.getItem('mrt-theme');
+                return saved || 'dark';
+            });
+            const searchInputRef = useRef(null);
+
+            // Apply theme to document
+            useEffect(() => {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('mrt-theme', theme);
+            }, [theme]);
+
+            const toggleTheme = () => {
+                setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+            };
+
+            const fetchStations = useCallback(async () => {
+                try {
+                    const response = await fetch('/api/stations');
+                    const result = await response.json();
+                    if (result.success) {
+                        setStations(result.data);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch stations:', err);
+                }
+            }, []);
+
+            const fetchArrivals = useCallback(async (stationCode, silent = false) => {
+                if (!silent) setLoading(true);
+                setError(null);
+                try {
+                    const response = await fetch('/api/arrivals/' + stationCode);
+                    const result = await response.json();
+                    if (result.success) {
+                        setArrivalData(result.data);
+                        setLastUpdated(new Date());
+                    } else {
+                        setError(result.error || 'Failed to fetch arrival data');
+                    }
+                } catch (err) {
+                    setError('Network error. Please try again.');
+                } finally {
+                    if (!silent) setLoading(false);
+                }
+            }, []);
+
+            useEffect(() => {
+                fetchStations();
+                fetchArrivals(selectedStation);
+            }, []);
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    fetchArrivals(selectedStation, true);
+                }, 30000);
+                return () => clearInterval(interval);
+            }, [selectedStation]);
+
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === 'Escape' && dropdownOpen) {
+                        closeDropdown();
+                    }
+                };
+                document.addEventListener('keydown', handleKeyDown);
+                return () => document.removeEventListener('keydown', handleKeyDown);
+            }, [dropdownOpen]);
+
+            useEffect(() => {
+                if (dropdownOpen && searchInputRef.current) {
+                    setTimeout(() => searchInputRef.current.focus(), 50);
+                }
+            }, [dropdownOpen]);
+
+            const handleStationSelect = (stationCode) => {
+                setSelectedStation(stationCode);
+                setDropdownOpen(false);
+                setSearchQuery('');
+                fetchArrivals(stationCode);
+            };
+
+            const handleRefresh = () => {
+                fetchArrivals(selectedStation);
+            };
+
+            const toggleDropdown = () => {
+                setDropdownOpen(!dropdownOpen);
+                if (!dropdownOpen) {
+                    setSearchQuery('');
+                }
+            };
+
+            const closeDropdown = () => {
+                setDropdownOpen(false);
+                setSearchQuery('');
+            };
+
+            const defaultStations = [
+                { name: 'Tiong Bahru', code: 'TIB' },
+                { name: 'Raffles Place', code: 'RFP' }
+            ];
+
+            const stationList = stations.length > 0 ? stations : defaultStations;
+
+            const filteredStations = stationList.filter(station => {
+                const query = searchQuery.toLowerCase();
+                return station.name.toLowerCase().includes(query) ||
+                       station.code.toLowerCase().includes(query);
+            });
+
+            const getSelectedStation = () => {
+                return stationList.find(s => s.code === selectedStation) ||
+                       { name: 'Tiong Bahru', code: 'TIB' };
+            };
+
+            const formatTime = (time) => {
+                if (!time) return '--';
+                // Transform "> X min(s)" to "X mins+"
+                const match = time.match(/^>\s*(\d+)\s*min/i);
+                if (match) {
+                    return match[1] + ' mins+';
+                }
+                return time;
+            };
+
+            const getLineCode = (lineName) => {
+                if (!lineName) return 'default';
+                const match = lineName.match(/\(([A-Z]+)\)/);
+                if (match) {
+                    return match[1].toLowerCase();
+                }
+                return 'default';
+            };
+
+            const getLineShortName = (lineName) => {
+                if (!lineName) return '';
+                const match = lineName.match(/\(([A-Z]+)\)/);
+                return match ? match[1] : lineName;
+            };
+
+            return html`
+                <div class="container">
+                    <header class="header">
+                        <div class="logo">
+                            <span class="logo-text">MRT Arrivals</span>
+                        </div>
+                        <div class="header-actions">
+                            <button
+                                class="theme-toggle"
+                                onClick=${toggleTheme}
+                                title=${theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            >
+                                <svg class="sun-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="4"/>
+                                    <path d="M12 2v2"/>
+                                    <path d="M12 20v2"/>
+                                    <path d="m4.93 4.93 1.41 1.41"/>
+                                    <path d="m17.66 17.66 1.41 1.41"/>
+                                    <path d="M2 12h2"/>
+                                    <path d="M20 12h2"/>
+                                    <path d="m6.34 17.66-1.41 1.41"/>
+                                    <path d="m19.07 4.93-1.41 1.41"/>
+                                </svg>
+                                <svg class="moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                                </svg>
+                            </button>
+                            <button
+                                class="refresh-btn ${loading ? 'spinning' : ''}"
+                                onClick=${handleRefresh}
+                                disabled=${loading}
+                                title="Refresh"
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                                    <path d="M21 3v5h-5"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="station-search-section">
+                        <!-- Quick Access Chips -->
+                        <div class="quick-access">
+                            <div class="quick-access-label">Quick Access</div>
+                            <div class="quick-access-chips">
+                                <div
+                                    class="quick-chip ewl ${selectedStation === 'TIB' ? 'selected' : ''}"
+                                    onClick=${() => handleStationSelect('TIB')}
+                                >
+                                    <div class="quick-chip-icon">EW</div>
+                                    <div class="quick-chip-info">
+                                        <div class="quick-chip-name">Tiong Bahru</div>
+                                        <div class="quick-chip-code">EW17</div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="quick-chip ewl ${selectedStation === 'RFP' ? 'selected' : ''}"
+                                    onClick=${() => handleStationSelect('RFP')}
+                                >
+                                    <div class="quick-chip-icon">EW</div>
+                                    <div class="quick-chip-info">
+                                        <div class="quick-chip-name">Raffles Place</div>
+                                        <div class="quick-chip-code">EW14 / NS26</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="search-divider">
+                            <div class="search-divider-line"></div>
+                            <span class="search-divider-text">or search all</span>
+                            <div class="search-divider-line"></div>
+                        </div>
+
+                        <!-- Dropdown -->
+                        <div class="custom-dropdown">
+                            ${dropdownOpen && html`
+                                <div class="dropdown-overlay" onClick=${closeDropdown}></div>
+                            `}
+                            <button
+                                class="dropdown-trigger ${dropdownOpen ? 'open' : ''}"
+                                onClick=${toggleDropdown}
+                                type="button"
+                            >
+                                <span class="dropdown-trigger-text">${getSelectedStation().name}</span>
+                                <span class="dropdown-trigger-code">${getSelectedStation().code}</span>
+                                <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div class="dropdown-menu ${dropdownOpen ? 'open' : ''}">
+                                <div class="dropdown-search">
+                                    <input
+                                        ref=${searchInputRef}
+                                        type="text"
+                                        placeholder="Search stations..."
+                                        value=${searchQuery}
+                                        onInput=${(e) => setSearchQuery(e.target.value)}
+                                        onClick=${(e) => e.stopPropagation()}
+                                    />
+                                </div>
+                                <div class="dropdown-list">
+                                    ${filteredStations.length === 0 && html`
+                                        <div class="dropdown-empty">No stations found</div>
+                                    `}
+                                    ${filteredStations.map(station => html`
+                                        <div
+                                            key=${station.code}
+                                            class="dropdown-item ${station.code === selectedStation ? 'selected' : ''}"
+                                            onClick=${() => handleStationSelect(station.code)}
+                                        >
+                                            <span class="dropdown-item-name">${station.name}</span>
+                                            <span class="dropdown-item-code">${station.code}</span>
+                                        </div>
+                                    `)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${loading && html`
+                        <div class="loading-state">
+                            <div class="loader"></div>
+                            <p>Loading arrivals...</p>
+                        </div>
+                    `}
+
+                    ${error && html`
+                        <div class="error-state">${error}</div>
+                    `}
+
+                    ${!loading && !error && arrivalData && html`
+                        <div class="station-bar">
+                            <span class="station-name">${arrivalData.station || 'Station'}</span>
+                        </div>
+
+                        ${arrivalData.directions && arrivalData.directions.length > 0 ? html`
+                            <div class="directions">
+                                ${arrivalData.directions.map((direction, index) => html`
+                                    <div class="direction-card" key=${index}>
+                                        <div class="direction-top">
+                                            <div class="direction-arrow">
+                                                ${index % 2 === 0 ? '→' : '←'}
+                                            </div>
+                                            <div class="direction-info">
+                                                <div class="direction-label">
+                                                    <span class="line-badge ${getLineCode(direction.lineName)}">${getLineShortName(direction.lineName)}</span>
+                                                </div>
+                                                <div class="direction-dest">${direction.towards}</div>
+                                            </div>
+                                        </div>
+                                        <div class="times-grid">
+                                            <div class="time-cell next">
+                                                <div class="time-label">Next</div>
+                                                <div class="time-value">${formatTime(direction.nextTrain?.time)}</div>
+                                                <div class="time-dest">${direction.nextTrain?.destination || '--'}</div>
+                                            </div>
+                                            <div class="time-cell after">
+                                                <div class="time-label">After</div>
+                                                <div class="time-value">${formatTime(direction.subsequentTrain?.time)}</div>
+                                                <div class="time-dest">${direction.subsequentTrain?.destination || '--'}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `)}
+                            </div>
+                        ` : html`
+                            <div class="empty-state">No arrival information available</div>
+                        `}
+
+                        ${lastUpdated && html`
+                            <div class="updated-at">
+                                <span>
+                                    <span class="pulse-dot"></span>
+                                    Updated ${lastUpdated.toLocaleTimeString()}
+                                </span>
+                            </div>
+                        `}
+                    `}
+                </div>
+            `;
+        }
+
+        render(html`<${App} />`, document.getElementById('app'));
+    </script>
+</body>
+</html>
