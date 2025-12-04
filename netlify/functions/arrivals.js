@@ -158,19 +158,20 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
-  // Get station code from query parameters
+  // Get station code from query parameters or path
   let stationCode = event.queryStringParameters?.code;
+
+  // If not in query params, try to extract from path (e.g., /api/arrivals/RFP)
+  if (!stationCode && event.path) {
+    const pathMatch = event.path.match(/\/(?:api\/)?arrivals\/([A-Za-z]+)$/);
+    if (pathMatch) {
+      stationCode = pathMatch[1];
+    }
+  }
 
   // Default to TIB if no station code provided
   if (!stationCode) {
-    return {
-      statusCode: 302,
-      headers: {
-        ...headers,
-        'Location': '/.netlify/functions/arrivals?code=TIB',
-      },
-      body: '',
-    };
+    stationCode = 'TIB';
   }
 
   try {
